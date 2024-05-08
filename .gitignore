@@ -1,0 +1,6 @@
+
+.idea/
+
+example/docker/rabbitmq/
+example/vendor
+example/composer.lock

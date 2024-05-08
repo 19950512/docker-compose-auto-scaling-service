@@ -1,0 +1,22 @@
+version: '3.1'
+services:
+  rabbitmq-master:
+    image: rabbitmq:3.8-management-alpine
+    hostname: rabbitmq-master
+    restart: unless-stopped
+    ports:
+      - "15674:15674"
+      - "5674:5674"
+    volumes:
+      - './docker/rabbitmq:/var/lib/rabbitmq'
+    networks:
+      - example_network
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+networks:
+  example_network:
+    driver: bridge
