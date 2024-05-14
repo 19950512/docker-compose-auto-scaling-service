@@ -18,12 +18,13 @@ class RabbitMQ
 
     public function __construct(){
 
-        $host = 'localhost';
-        $port = '5674';
+        $host = '192.168.18.179';
+        $port = '5672';
         $user = 'guest';
         $password = 'guest';
         $max_retry_connections = 3;
         $retry_delay_seconds = 2;
+
 
         $attempts = 0;
         while ($attempts < $max_retry_connections) {
@@ -34,6 +35,7 @@ class RabbitMQ
                     $user,
                     $password
                 );
+
                 break;
             } catch (AMQPIOException $e) {
                 echo "Erro de E/S: " . $e->getMessage() . "\n";
@@ -42,6 +44,7 @@ class RabbitMQ
             } catch (Exception $e) {
                 echo "Erro desconhecido: " . $e->getMessage() . "\n";
             }
+
 
             $attempts++;
             if ($attempts < $max_retry_connections) {
@@ -117,14 +120,9 @@ class RabbitMQ
 
             if(str_contains($erro, 'NOT_FOUND - no queue')){
 
-                // se a fila não existe, vamos cria-la.
-                $this->channel->queue_declare(
-                    queue: $queue,
-                    passive: false,
-                    durable: true,
-                    exclusive: false,
-                    auto_delete: false
-                );
+                // Declara uma fila
+                $r = $this->channel->queue_declare($queue, false, true, false, false);
+                dd($r);
 
                 // tenta novamente
                 throw new Exception("A fila {$queue} não existe, porem foi criada. Tente novamente.");

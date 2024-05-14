@@ -13,10 +13,30 @@ if(!is_file($pathVendor)) {
 
 require_once $pathVendor;
 
-use App\Queues\RabbitMQ;
 use Exception;
+use PhpAmqpLib\Connection\AMQPStreamConnection;
 
-$rabbitMQ = new RabbitMQ();
+
+
+$host = 'rabbitmq-master';
+$port = 5672;
+$user = 'guest';
+$pass = 'guest';
+$vhost = '/';
+
+$connection = new AMQPStreamConnection($host, $port, $user, $pass, $vhost);
+$channel = $connection->channel();
+
+// Nome da fila
+$queueName = 'lancar_foguete';
+
+// Declaração da fila
+$channel->queue_declare($queueName, false, true, false, false);
+
+echo "Fila '$queueName' criada com sucesso.\n";
+
+
+
 
 $callback = function($message)
 {
@@ -40,10 +60,22 @@ try {
 
     echo date('m/d/Y H:i:s a', time()) . " [x] Aguardando novas Foguetes para lançar!\n";
 
-    $rabbitMQ->subscribe(
-        queue: 'lancar_foguete',
-        callback: $callback
+
+    $channel->basic_qos(
+        prefetch_size: null,
+        prefetch_count: 1, // Quantidade de mensagens que o consumidor pode receber por vez até que ele envie um ack
+        a_global: null
     );
+
+    // Consumindo mensagens da fila
+    $channel->basic_consume($queueName, '', false, false, false, false, $callback);
+
+    while ($channel->is_consuming()) {
+        $channel->wait();
+    }
+
+    $channel->close();
+    $connection->close();
 
 } catch (Exception $e) {
 

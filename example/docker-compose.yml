@@ -5,8 +5,8 @@ services:
     hostname: rabbitmq-master
     restart: unless-stopped
     ports:
-      - "15674:15674"
-      - "5674:5674"
+      - "15672:15672"
+      - "5672:5672"
     volumes:
       - './docker/rabbitmq:/var/lib/rabbitmq'
     networks:
@@ -16,6 +16,37 @@ services:
       placement:
         constraints:
           - node.role == manager
+
+  monitoramento-lanca-foguete:
+    image: php:8.2-cli
+    hostname: monitoramento-lanca-foguete
+    restart: unless-stopped
+    command: php /application/Monitoramento.php # Comando para iniciar o worker
+    volumes:
+      - './:/application' # Mapeie o código-fonte para o contêiner
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - example_network
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == worker
+
+  worker-lanca-foguete:
+    image: php:8.2-cli
+    hostname: worker-lanca-foguete
+    restart: unless-stopped
+    command: php /application/src/Workers/LancaFoguete.php # Comando para iniciar o worker
+    volumes:
+      - './:/application' # Mapeie o código-fonte para o contêiner
+    networks:
+      - example_network
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == worker
 
 networks:
   example_network:
