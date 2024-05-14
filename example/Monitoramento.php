@@ -15,7 +15,7 @@ if (!is_file($pathVendor)) {
 require_once $pathVendor;
 
 // Configurações do RabbitMQ
-$host = 'rabbitmq-master';
+$host = 'localhost';
 $port = 5672;
 $user = 'guest';
 $pass = 'guest';
@@ -60,8 +60,8 @@ function calculateReplicas($queueSize)
 function updateServiceReplicas($replicas)
 {
     // Comando para atualizar réplicas do serviço (exemplo)
-    //shell_exec("docker service scale docker-compose-auto-scaling-service_lanca_foguete={$replicas}");
-     echo "Atualizando réplicas do serviço para: $replicas\n";
+    shell_exec("docker-compose up -d --scale worker-lanca-foguete={$replicas}");
+    echo "Atualizando réplicas do serviço para: $replicas\n";
 }
 
 // Conecta-se ao RabbitMQ
@@ -72,6 +72,8 @@ try {
     echo "Erro ao conectar-se ao RabbitMQ: {$e->getMessage()}\n";
     exit;
 }
+
+$numeroReplicaAtual = 0;
 
 // Loop principal
 while (true) {
@@ -87,7 +89,11 @@ while (true) {
 
     // Calcula o número de réplicas com base na quantidade de mensagens e atualiza
     $newReplicas = calculateReplicas($queueSize);
-    updateServiceReplicas($newReplicas);
+
+    if($newReplicas != $numeroReplicaAtual and $newReplicas <= 50){
+        $numeroReplicaAtual = $newReplicas;
+        updateServiceReplicas($newReplicas);
+    }
 
     // Aguarda o intervalo antes de verificar novamente
     sleep($intervalo);
